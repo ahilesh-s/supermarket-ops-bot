@@ -1,0 +1,29 @@
+# Store data and owner configuration are never source.
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+database/
+data/
+generated/
+backups/
+runtime.json
+SOUL.local.md
+# Local tooling
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.coverage
+htmlcov/
+*.pdf
+*.pptx
+*.png
+*Zone.Identifier*

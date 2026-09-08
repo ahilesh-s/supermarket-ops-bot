@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "supermarket-ops-bot"
+version = "0.1.0"
+description = "Local inventory, billing, customer credit and reporting tools for Hermes Agent"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{name = "AHILESH"}]
+dependencies = ["reportlab>=4,<6", "python-pptx>=1,<2", "tzdata>=2024.1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "pypdf>=5,<7", "PyYAML>=6,<7"]
+
+[project.scripts]
+supermarket-ops = "abi_store.cli:main"
+
+[project.urls]
+Repository = "https://github.com/wolverinelogan-pc/supermarket-ops-bot"
+
+[tool.setuptools.packages.find]
+include = ["abi_store*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
