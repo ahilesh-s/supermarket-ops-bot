@@ -1,5 +1,9 @@
 # Supermarket Ops Bot
 
+<video controls src="docs/assets/demo.mp4" title="Supermarket Ops Bot demo"></video>
+
+[Demo video](docs/assets/demo.mp4)
+
 Inventory, billing, customer credit and reporting for [Hermes Agent](https://github.com/NousResearch/hermes-agent).
 
 Built by AHILESH from the tools used to run Ahilesh Supermarket with Abi, an owner-operated Hermes assistant. This repository packages that work as a reusable Python engine and installable skills. Hermes handles the conversation; SQLite records the business state; Python performs the calculations.
