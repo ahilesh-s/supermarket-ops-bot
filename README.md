@@ -24,7 +24,7 @@ The default low-stock threshold is 10 in each product's unit. Cost prices are re
 Requires Python 3.11 or newer and [uv](https://docs.astral.sh/uv/). Linux/WSL is tested locally; CI exercises Linux with Python 3.11 and 3.13. Hermes needs terminal-tool access. There is no separate model API key for this package; it uses the Hermes installation you already have.
 
 ```sh
-git clone https://github.com/wolverinelogan-pc/supermarket-ops-bot.git
+git clone https://github.com/ahilesh-s/supermarket-ops-bot.git
 cd supermarket-ops-bot
 uv sync --extra dev
 ```
@@ -119,6 +119,6 @@ docs/          Setup, operations, reporting and provenance
 
 ## Credits and license
 
-Created and maintained by [AHILESH](https://github.com/wolverinelogan-pc), with Abi/Hermes as a development collaborator. Hermes Agent is built by Nous Research and is a separate project; this repository is not an official Nous Research product.
+Created and maintained by [AHILESH](https://github.com/ahilesh-s), with Abi/Hermes as a development collaborator. Hermes Agent is built by Nous Research and is a separate project; this repository is not an official Nous Research product.
 
 MIT licensed. See [LICENSE](LICENSE) and [provenance](docs/provenance.md).

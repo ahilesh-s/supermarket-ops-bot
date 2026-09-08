@@ -2,7 +2,7 @@
 name: sqlite-tool-transactions
 description: "Use when building transactional SQLite business tools."
 version: 0.1.0
-author: AHILESH (wolverinelogan-pc), Hermes Agent
+author: AHILESH (ahilesh-s), Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
