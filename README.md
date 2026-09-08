@@ -53,24 +53,76 @@ Start a new Hermes session and ask:
 
 The installed runner remembers the selected interpreter and data directory, so later sessions do not depend on a shell export. Keep the clone and its virtual environment in place; reinstall the binding if you move them. Review [setup](docs/setup.md) before handling real transactions.
 
-## Operating model
+## Harness choice: Hermes Agent
+
+This project is built for Hermes Agent as the harness: the layer that receives the owner's message, loads operational skills, asks clarifying questions, calls tools and returns concise results. Hermes was chosen because the supermarket workflow needs more than chat completion:
+
+- persistent skills that can teach future sessions the same store rules;
+- terminal/tool access for deterministic Python operations;
+- profile isolation, so each store can bind its own data directory;
+- messaging support, useful for owner-operated Telegram-style workflows;
+- explicit memory and skill boundaries, so shop facts live in SQLite rather than in a prompt.
+
+The repository does not depend on a specific language model. Any Hermes profile with terminal access can use the skills. The model decides which operation is needed; the Python engine decides whether the operation is valid.
+
+## Control loop
 
 ```text
 Owner's request
     |
-Hermes + supermarket skills
-    |  resolve facts, clarify ambiguity, obtain approval
+Hermes Agent
+    |  load supermarket skill, identify intent, extract candidate arguments
+    |
+Clarify / approve when needed
+    |  ambiguous product, missing catalog fact, stock write, checkout, khata write
+    |
 Bound JSON command runner
+    |  allowlisted operation + JSON arguments + configured data directory
     |
 Python operations
     +-- stock.db: catalog, receipts, drafts, finalized snapshots
     +-- khata.db: standalone customer credit ledger
     +-- generated/: invoices, charts, presentations
+    |
+Hermes Agent
+    |  read back written state where needed, report IDs/totals/paths
 ```
+
+The loop is intentionally narrow. Hermes never writes SQL directly in normal use and never calculates prices or GST in the prompt. It calls an allowlisted operation, receives JSON, and reports the result. Write operations require an explicit approval step in the skill workflow and the CLI's `--confirm` flag, but that flag is only an accidental-write guard. Real sender authentication belongs to the Hermes messaging/gateway configuration.
 
 A draft does not reserve or deduct stock. Checkout rechecks inventory inside a write transaction. Repeating a confirmed finalization with the same key and payload returns the recorded result. Finalized reports use snapshots rather than today's prices.
 
-Owner approval is part of the workflow, not a security boundary implemented by the model. The CLI's `--confirm` flag prevents accidental writes; it does not authenticate a sender. Keep Hermes' sender allowlists and approval controls enabled, especially on messaging platforms.
+## Skill and tool design
+
+The design splits responsibilities instead of hiding business rules in prose:
+
+- `skills/supermarket-ops`: when to register products, receive stock, build bills, finalize checkout, generate invoices and handle khata.
+- `skills/supermarket-analytics`: day close, period reports, fresh performance decks and reporting caveats.
+- `skills/sqlite-tool-transactions`: engineering rules for future transactional changes.
+- `abi_store/cli.py`: a fixed JSON command surface. Unknown operations are rejected; arbitrary imports are not exposed.
+- `scripts/install_skills.py`: copies only this project's skills into the chosen Hermes home and writes a local `runtime.json` binding.
+- `skills/*/scripts/run.py`: reads that binding and forwards commands with the selected Python interpreter and store data directory.
+
+This means a Hermes agent becomes a supermarket bot by loading skills and using the runner, not by being trusted to remember hidden instructions. Store-specific data stays in the selected data directory. The repository remains portable and public.
+
+## How the hard parts are handled
+
+| Hard part | Solution |
+| --- | --- |
+| Product ambiguity | Exact SKU lookup first, then name/fuzzy matching. Multiple matches raise ambiguity instead of guessing. |
+| Loose vs packaged goods | Product records carry unit and `packaging_type`; billing uses SKU quantities and does not silently convert units. |
+| GST-inclusive retail pricing | MRP is treated as tax-inclusive. The engine backs out taxable value, CGST and SGST using decimal half-up rounding. |
+| Overselling under concurrency | Finalization runs in a `BEGIN IMMEDIATE` transaction and deducts stock with `UPDATE ... WHERE qty >= ?`; any shortage rolls back the bill. |
+| Draft edits | Draft add/edit/remove operations check bill status and stock inside a write transaction. Finalized bills refuse edits. |
+| Duplicate checkout retries | `finalize_bill` stores an idempotency result. Reusing the same key with the same bill/payment payload replays the stored result; conflicting reuse is rejected. |
+| Historical correctness | Finalized bills snapshot item price, GST, cost and shop identity. Invoices and reports read the snapshot, not current catalog values. |
+| Customer credit | Khata is a separate ledger with unknown-customer and overpayment checks. Atomic credit-sale checkout is deliberately unsupported until a cross-ledger design exists. |
+| Reporting dates | Reports use strict `YYYY-MM-DD` business dates and the configured IANA timezone, with half-open UTC bounds. |
+| Margin claims | Margin is documented as snapshot gross spread, not net profit, FIFO COGS or an audited accounting statement. Missing legacy cost refuses calculation. |
+| Generated artifacts | PDF and PPTX files are created under the runtime data root with unique names. Empty periods produce empty reports, not sample data. |
+| Public release safety | `.gitignore`, tests and scans exclude live databases, generated invoices/decks, credentials, runtime bindings and machine-local paths. |
+
+Owner approval is part of the workflow, not a security boundary implemented by the model. Keep Hermes' sender allowlists and approval controls enabled, especially on messaging platforms.
 
 ## Direct use
 
